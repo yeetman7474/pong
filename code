@@ -1,0 +1,173 @@
+import pygame
+import random
+import sys
+
+pygame.init()
+
+WIDTH = 800
+HEIGHT = 600
+BALL_RADIUS = 10
+PADDLE_WIDTH = 15
+PADDLE_HEIGHT = 100
+FPS = 60
+
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+GREEN = (0, 255, 0)
+
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Pong")
+
+font = pygame.font.SysFont('Arial', 30)
+
+ball = pygame.Rect(WIDTH // 2 - BALL_RADIUS, HEIGHT // 2 - BALL_RADIUS, BALL_RADIUS * 2, BALL_RADIUS * 2)
+player_paddle = pygame.Rect(10, HEIGHT // 2 - PADDLE_HEIGHT // 2, PADDLE_WIDTH, PADDLE_HEIGHT)
+ai_paddle = pygame.Rect(WIDTH - PADDLE_WIDTH - 10, HEIGHT // 2 - PADDLE_HEIGHT // 2, PADDLE_WIDTH, PADDLE_HEIGHT)
+
+ball_speed_x = random.choice([1, -1]) * 5
+ball_speed_y = random.choice([1, -1]) * 5
+
+paddle_speed = 7
+ai_speed = 5
+
+player_score = 0
+ai_score = 0
+
+difficulty_settings = {
+    "Easy": 3,
+    "Medium": 5,
+    "Hard": 7,
+    "Imossaple": 10,
+}
+
+current_difficulty = "Medium"
+
+def reset_ball():
+    global ball_speed_x, ball_speed_y
+    ball.center = (WIDTH // 2, HEIGHT // 2)
+    ball_speed_x = random.choice([1, -1]) * 5
+    ball_speed_y = random.choice([1, -1]) * 5
+
+def display_score():
+    player_text = font.render(f"Player: {player_score}", True, WHITE)
+    ai_text = font.render(f"AI: {ai_score}", True, WHITE)
+    screen.blit(player_text, (50, 20))
+    screen.blit(ai_text, (WIDTH - ai_text.get_width() - 50, 20))
+
+def game_loop():
+    global ball_speed_x, ball_speed_y, player_score, ai_score, ai_speed
+
+    clock = pygame.time.Clock()
+    
+    ai_speed = difficulty_settings[current_difficulty]
+
+    while True:
+        screen.fill(BLACK)
+        display_score()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_w] and player_paddle.top > 0:
+            player_paddle.y -= paddle_speed
+        if keys[pygame.K_s] and player_paddle.bottom < HEIGHT:
+            player_paddle.y += paddle_speed
+
+        if ai_paddle.centery < ball.centery and ai_paddle.bottom < HEIGHT:
+            ai_paddle.y += ai_speed
+        if ai_paddle.centery > ball.centery and ai_paddle.top > 0:
+            ai_paddle.y -= ai_speed
+
+        ball.x += ball_speed_x
+        ball.y += ball_speed_y
+
+        if ball.top <= 0 or ball.bottom >= HEIGHT:
+            ball_speed_y = -ball_speed_y
+        
+        if ball.colliderect(player_paddle) or ball.colliderect(ai_paddle):
+            ball_speed_x = -ball_speed_x
+        
+        if ball.left <= 0:
+            ai_score += 1
+            reset_ball()
+        if ball.right >= WIDTH:
+            player_score += 1
+            reset_ball()
+
+        pygame.draw.rect(screen, GREEN, player_paddle)
+        pygame.draw.rect(screen, GREEN, ai_paddle)
+        pygame.draw.ellipse(screen, GREEN, ball)
+
+        pygame.display.flip()
+
+        clock.tick(FPS)
+
+def difficulty_menu():
+    global current_difficulty
+    while True:
+        screen.fill(BLACK)
+
+        title_text = font.render("Select Difficulty", True, WHITE)
+        easy_text = font.render("1. Easy", True, WHITE)
+        medium_text = font.render("2. Medium", True, WHITE)
+        hard_text = font.render("3. Hard", True, WHITE)
+        imossaple_text = font.render("4. Imossaple", True, WHITE)
+        back_text = font.render("Press ESC to go back", True, WHITE)
+
+        screen.blit(title_text, (WIDTH // 2 - title_text.get_width() // 2, HEIGHT // 4))
+        screen.blit(easy_text, (WIDTH // 2 - easy_text.get_width() // 2, HEIGHT // 3))
+        screen.blit(medium_text, (WIDTH // 2 - medium_text.get_width() // 2, HEIGHT // 3 + 40))
+        screen.blit(hard_text, (WIDTH // 2 - hard_text.get_width() // 2, HEIGHT // 3 + 80))
+        screen.blit(imossaple_text, (WIDTH // 2 - imossaple_text.get_width() // 2, HEIGHT // 3 + 120))
+        screen.blit(back_text, (WIDTH // 2 - back_text.get_width() // 2, HEIGHT // 3 + 160))
+
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_1:
+                    current_difficulty = "Easy"
+                    game_loop()
+                if event.key == pygame.K_2:
+                    current_difficulty = "Medium"
+                    game_loop()
+                if event.key == pygame.K_3:
+                    current_difficulty = "Hard"
+                    game_loop()
+                if event.key == pygame.K_4:
+                    current_difficulty = "Imossaple"
+                    game_loop()
+                if event.key == pygame.K_ESCAPE:
+                    main_menu()
+
+def main_menu():
+    while True:
+        screen.fill(BLACK)
+
+        title_text = font.render("Pong Game", True, WHITE)
+        start_text = font.render("Press ENTER to Start", True, WHITE)
+        difficulty_text = font.render("Press D for Difficulty", True, WHITE)
+
+        screen.blit(title_text, (WIDTH // 2 - title_text.get_width() // 2, HEIGHT // 4))
+        screen.blit(start_text, (WIDTH // 2 - start_text.get_width() // 2, HEIGHT // 2 - 40))
+        screen.blit(difficulty_text, (WIDTH // 2 - difficulty_text.get_width() // 2, HEIGHT // 2 + 20))
+
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    game_loop()
+                if event.key == pygame.K_d:
+                    difficulty_menu()
+
+main_menu()
